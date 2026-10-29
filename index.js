@@ -37,7 +37,7 @@ app.post('/webhooks/orders-create', express.raw({ type: 'application/json' }), (
 });
 
 // ---------- AI chat page ----------
-app.get('/chat', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'chat.html')));
+app.get('/chat', (req, res) => res.sendFile(path.join(__dirname, 'chat.html')));
 
 app.post('/api/chat', express.json({ limit: '200kb' }), async (req, res) => {
   if (!aiEnabled) return res.status(503).json({ error: 'AI agent is off: add ANTHROPIC_API_KEY' });

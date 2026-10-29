@@ -5,7 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const FILE = path.join(__dirname, '..', 'data', 'orders.json');
+const FILE = path.join(__dirname, 'data', 'orders.json');
 
 function load() {
   try {

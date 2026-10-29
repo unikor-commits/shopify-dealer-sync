@@ -2,14 +2,14 @@
   "name": "shopify-dealer-sync",
   "version": "1.0.0",
   "description": "Connects a Shopify store to a dropshipping dealer: forwards orders, syncs stock, and sends tracking to customers. Includes an AI agent for daily summaries, problem alerts, and chat.",
-  "main": "src/index.js",
+  "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "start": "node src/index.js",
-    "sync-stock": "node -e \"require('./src/jobs').syncStock().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)})\"",
-    "sync-tracking": "node -e \"require('./src/jobs').syncTracking().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)})\"",
-    "summary-now": "node -e \"require('./src/monitor').dailySummary().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)})\"",
-    "watch-now": "node -e \"require('./src/monitor').watchForProblems().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)})\""
+    "start": "node index.js",
+    "sync-stock": "node -e \"require('./jobs').syncStock().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)})\"",
+    "sync-tracking": "node -e \"require('./jobs').syncTracking().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)})\"",
+    "summary-now": "node -e \"require('./monitor').dailySummary().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)})\"",
+    "watch-now": "node -e \"require('./monitor').watchForProblems().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)})\""
   },
   "engines": {
     "node": ">=18"
