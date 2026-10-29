@@ -1,0 +1,23 @@
+{
+  "name": "shopify-dealer-sync",
+  "version": "1.0.0",
+  "description": "Connects a Shopify store to a dropshipping dealer: forwards orders, syncs stock, and sends tracking to customers. Includes an AI agent for daily summaries, problem alerts, and chat.",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "sync-stock": "node -e \"require('./src/jobs').syncStock().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)})\"",
+    "sync-tracking": "node -e \"require('./src/jobs').syncTracking().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)})\"",
+    "summary-now": "node -e \"require('./src/monitor').dailySummary().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)})\"",
+    "watch-now": "node -e \"require('./src/monitor').watchForProblems().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)})\""
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.16"
+  }
+}
