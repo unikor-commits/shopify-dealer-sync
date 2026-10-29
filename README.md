@@ -1,0 +1,1 @@
+# shopify-dealer-sync
