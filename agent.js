@@ -5,6 +5,7 @@
 const shopify = require('./shopify');
 const store = require('./store');
 const jobs = require('./jobs');
+const actions = require('./actions');
 
 const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5';
 const STUCK_DAYS = Number(process.env.STUCK_DAYS || 4);
@@ -15,11 +16,15 @@ The store runs on Shopify. A sync app sends new orders to the dealer, copies the
 Use your tools to look up real data before answering; never guess numbers. Keep answers short, clear and friendly, in plain language for a busy store owner.
 Point out anything that needs the owner's attention and say what to do about it.
 Only use the retry or sync tools when the owner asks you to, or when you are told you are running as the automatic problem watcher.
+You can also build the store: create products (always as drafts), edit details, make collections, change prices and publish.
+Before publishing, changing a price or deleting, say exactly what will change and ask the owner to reply yes; only then call the tool again with confirmed: true.
+If the owner asks for something you have no tool for (for example creating a whole new store or paying for a plan), say plainly that it needs to be done by them in Shopify.
+The automatic problem watcher and daily summary must never create, change or delete products.
 Today's date: ${new Date().toISOString().slice(0, 10)}.`;
 
 // ---------- Tools the agent can use ----------
 
-const tools = [
+const baseTools = [
   {
     name: 'get_orders',
     description: 'List Shopify orders from the last N days with totals, payment and shipping status, and items.',
@@ -58,6 +63,8 @@ const tools = [
     input_schema: { type: 'object', properties: {} },
   },
 ];
+
+const tools = [...baseTools, ...actions.actionTools];
 
 async function getOrders(days) {
   const d = Math.min(Math.max(Number(days) || 1, 1), 60);
@@ -121,7 +128,9 @@ async function runTool(name, input) {
     case 'retry_failed_orders': return jobs.retryFailed();
     case 'run_stock_sync': await jobs.syncStock(); return { done: true };
     case 'run_tracking_sync': await jobs.syncTracking(); return { done: true };
-    default: throw new Error(`Unknown tool: ${name}`);
+    default:
+      if (actions.handlers[name]) return actions.handlers[name](input);
+      throw new Error(`Unknown tool: ${name}`);
   }
 }
 
@@ -135,7 +144,7 @@ async function callClaude(messages) {
       'x-api-key': process.env.ANTHROPIC_API_KEY,
       'anthropic-version': '2023-06-01',
     },
-    body: JSON.stringify({ model: MODEL, max_tokens: 1500, system: SYSTEM_PROMPT, tools, messages }),
+    body: JSON.stringify({ model: MODEL, max_tokens: 2500, system: SYSTEM_PROMPT, tools, messages }),
   });
   if (!res.ok) throw new Error(`Anthropic API error: ${res.status} ${await res.text()}`);
   return res.json();
@@ -146,7 +155,7 @@ async function callClaude(messages) {
 async function ask(messages) {
   const convo = messages.map((m) => ({ role: m.role, content: m.content }));
 
-  for (let step = 0; step < 8; step++) {
+  for (let step = 0; step < 15; step++) {
     const reply = await callClaude(convo);
     convo.push({ role: 'assistant', content: reply.content });
 
