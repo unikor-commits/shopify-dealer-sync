@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Store Assistant</title>
+<style>
+  :root { --bg:#F4F1EA; --card:#FFFFFF; --ink:#141414; --muted:#5A5650; --line:#DDD6C8; --me:#141414; --me-ink:#F4F1EA; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#141414; --card:#1F1E1C; --ink:#F4F1EA; --muted:#B4AEA3; --line:#34322E; --me:#F4F1EA; --me-ink:#141414; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family: Inter, "Helvetica Neue", Arial, sans-serif; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 24px 16px; display:flex; flex-direction:column; gap:16px; min-height:100vh; }
+  h1 { margin:0; font-family: Georgia, serif; font-weight:500; font-size:28px; }
+  p.sub { margin:0; color:var(--muted); font-size:14px; }
+  #log { flex:1; display:flex; flex-direction:column; gap:12px; }
+  .msg { padding:12px 14px; border-radius:12px; white-space:pre-wrap; line-height:1.5; max-width:90%; }
+  .bot { background:var(--card); border:1px solid var(--line); align-self:flex-start; }
+  .me { background:var(--me); color:var(--me-ink); align-self:flex-end; }
+  form, .row { display:flex; gap:8px; }
+  input { flex:1; padding:12px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--ink); font-size:16px; }
+  button { padding:12px 18px; border-radius:10px; border:0; background:var(--me); color:var(--me-ink); font-size:16px; cursor:pointer; min-height:44px; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .chip { background:var(--card); color:var(--ink); border:1px solid var(--line); font-size:14px; padding:8px 12px; }
+  label { position:absolute; left:-9999px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Store Assistant</h1>
+  <p class="sub">Ask about orders, sales, stock, or shipping.</p>
+
+  <div class="row" id="pwRow">
+    <label for="pw">Password</label>
+    <input id="pw" type="password" placeholder="Admin password">
+  </div>
+
+  <div class="chips">
+    <button class="chip" type="button">How did sales go this week?</button>
+    <button class="chip" type="button">Which orders haven't shipped yet?</button>
+    <button class="chip" type="button">What's running low on stock?</button>
+  </div>
+
+  <div id="log"></div>
+
+  <form id="form">
+    <label for="q">Message</label>
+    <input id="q" autocomplete="off" placeholder="Type a question…">
+    <button type="submit">Send</button>
+  </form>
+</div>
+<script>
+  const log = document.getElementById('log');
+  const q = document.getElementById('q');
+  const pw = document.getElementById('pw');
+  const history = [];
+
+  function add(text, who) {
+    const div = document.createElement('div');
+    div.className = 'msg ' + who;
+    div.textContent = text;
+    log.appendChild(div);
+    div.scrollIntoView({ behavior: 'smooth' });
+    return div;
+  }
+
+  async function send(text) {
+    if (!text.trim()) return;
+    add(text, 'me');
+    history.push({ role: 'user', content: text });
+    const thinking = add('Checking…', 'bot');
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': pw.value },
+        body: JSON.stringify({ messages: history }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Something went wrong');
+      thinking.textContent = data.reply;
+      history.push({ role: 'assistant', content: data.reply });
+    } catch (err) {
+      thinking.textContent = 'Error: ' + err.message;
+      history.pop();
+    }
+  }
+
+  document.getElementById('form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = q.value;
+    q.value = '';
+    send(text);
+  });
+  document.querySelectorAll('.chip').forEach((b) => b.addEventListener('click', () => send(b.textContent)));
+</script>
+</body>
+</html>
